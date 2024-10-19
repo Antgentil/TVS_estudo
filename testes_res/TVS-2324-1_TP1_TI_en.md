@@ -30,4 +30,6 @@ A invocação da função `xalloc(4)` aloca 4 páginas de memória (4 * 4096 byt
 
 ### b) Address Space Change on `dlclose`
 
-Quando o processo invoca `dlclose` com o valor de `count = 2`, a função `xfree` será chamada, o que resulta na execução de `munmap` para libertar a memória apontada. Como o `count` diminui de 2 para 1, a região de memória de 4 páginas alocada anteriormente será removida do espaço de endereçamento do processo. No ficheiro `/proc/<pid>/smaps`, essa região de memória não será mais visível, indicando que a memória foi libertada com sucesso.
+Quando o processo invoca ``dlclose`` com count = 2, a biblioteca é descarregada da memória, mas a memória alocada pela função xalloc(4) (correspondente a 4 páginas) não é automaticamente libertada, a menos que a função xfree seja explicitamente chamada antes de dlclose. Após o descarregamento da biblioteca, a variável count já não estará acessível, e a memória continuará alocada até que o processo termine (ou até que seja libertada manualmente).
+
+No ficheiro /proc/<pid>/smaps, a região de memória correspondente às 4 páginas alocadas por xalloc(4) ainda estará visível no espaço de endereçamento do processo. Embora a biblioteca tenha sido descarregada, a memória continua alocada.
