@@ -114,6 +114,16 @@ syscall                   ; Make the write system call
 ```
 - The program writes the contents of the mapped file (in this case, 1 byte) to stdout.
 
+## However:
+
+- The operating system does not map just 1 byte.
+
+``mmap`` works in units of memory pages, which are typically 4 KB in size.
+
+Even though the code asks for just 1 byte to be mapped (%rdx = 1), the OS rounds this up to the nearest page size, mapping an entire memory page (usually 4 KB).
+
+As a result, when the program later writes data, it ends up accessing and writing more than just the 1 byte that was requested because the entire memory page, which includes the whole file content, is mapped.
+
 ### 5º System Call (exit_group)
 ```
 xorq %rdi, %rdi            ; Exit status 0 (success)
@@ -121,3 +131,99 @@ movq $231, %rax            ; Syscall number for exit_group (231)
 syscall                    ; Perform system call
 ```
 - This is the exit_group system call (syscall number 231) that terminates the program
+
+---
+
+## After running: strace ./prog
+```
+isel@isel-tvs:~/Documents/semana7/ex2/x86-64$ strace ./prog
+execve("./prog", ["./prog"], 0x7ffcbd517b40 /* 60 vars */) = 0
+openat(AT_FDCWD, "/etc/os-release", O_RDONLY) = 3
+lseek(3, 0, SEEK_END)                   = 400
+mmap(NULL, 400, PROT_READ, MAP_PRIVATE, 3, 0) = 0x75a0a526f000
+write(1, "PRETTY_NAME=\"Ubuntu 24.04.1 LTS\""..., 400PRETTY_NAME="Ubuntu 24.04.1 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04.1 LTS (Noble Numbat)"
+VERSION_CODENAME=noble
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=noble
+LOGO=ubuntu-logo
+) = 400
+exit_group(0)                           = ?
++++ exited with 0 +++
+isel@isel-tvs:~/Documents/semana7/ex2/x86-64$ 
+```
+--
+```
+execve("./prog", ["./prog"], 0x7ffcbd517b40 /* 60 vars */) = 0
+```
+- The system call that starts running your program prog. It loads the program into memory and starts its execution.
+- The program is executed with the argument ["./prog"] (which just runs the program without any additional command-line arguments).
+- The 0x7ffcbd517b40 is a pointer to the environment variables passed to the program (60 variables in total).
+```
+openat(AT_FDCWD, "/etc/os-release", O_RDONLY) = 3
+```
+- The program opens the file /etc/os-release in read-only mode (O_RDONLY).
+- AT_FDCWD is a special constant that means the file is opened relative to the current working directory.
+- The system returns 3, which is the file descriptor for the opened file. File descriptor 0,1 and 2 are set up for stdin, stdout and stderr.
+```
+lseek(3, 0, SEEK_END) = 400
+```
+- The program moves the file pointer to the end of the file using the lseek system call.
+- File descriptor 3 (the opened /etc/os-release file) is used here.
+- SEEK_END tells the system to move the file pointer to the end. (The zero, 2nd argument, means there's no ``off_t offset``, offset of the pointer). É para começar mesmo no fim.
+- The result (400) indicates that the file is 400 bytes long, meaning the file pointer is now positioned at the 400th byte (the end of the file)
+
+```
+mmap(NULL, 400, PROT_READ, MAP_PRIVATE, 3, 0) = 0x75a0a526f000
+```
+
+- The program uses the mmap system call to map 400 bytes of the file into memory.
+- It maps the entire file, starting from byte 0, into memory. The memory address where the file is mapped is 0x75a0a526f000.
+- ``PROT_READ``: The memory is mapped as read-only, meaning the program can read from it but not modify it.
+- ``MAP_PRIVATE``: Any changes made would be private to the program (not shared with other processes).
+```
+write(1, "PRETTY_NAME=\"Ubuntu 24.04.1 LTS\""..., 400) = 400
+```
+
+- The program uses the ``write`` system call to write 400 bytes of data to file descriptor 1.
+- File descriptor 1 is standard output (stdout); content printed to the terminal.
+- The program writes the entire content of ``/etc/os-release`` (400 bytes) to the terminal.
+- Result: 400 means the system successfully wrote all 400 bytes to stdout.
+```
+exit_group(0) = ?
++++ exited with 0 +++
+```
+- The program uses the ``exit_group`` system call to terminate. The **0** indicates that it exits successfully without errors.
+
+---
+
+
+# 2.a) Explicação:
+
+
+(1ª system call - openat)
+
+- O programa abre o ficheiro /etc/os-release usando a chamada de sistema openat. 
+
+(2ª system call - lseek)
+
+- De seguida, utiliza lseek para mover o ponteiro para o fim do ficheiro, determinando o tamanho do ficheiro (Neste caso são 400 bytes). 
+
+(3ª system call - mmap)
+
+- O programa pede para mapear 1 byte com mmap, mas devido ao sistema de páginas de memória do sistema operativo, acaba por mapear mais do que 1 byte (provavelmente 4KB). 
+
+(4ª system call - write)
+
+- A chamada de sistema write escreve a memória mapeada para o ecrã, resultando na impressão de todo o conteúdo do ficheiro, e não apenas 1 byte. 
+
+(5ª system call - exit_group)
+
+- Encerra o programa com sucesso, retornando o valor 0. 
