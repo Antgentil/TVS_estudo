@@ -7,9 +7,9 @@
 #include <string.h>
 #include <dlfcn.h>
 
-#define DATA_SIZE 16*1024*1024				// 16MiB
-#define RSS_INCREASE_SIZE 3*1024*1024		// 3MiB
-#define PRIVATE_CLEAN_DATA_SIZE 256			// 256 bytes
+#define DATA_SIZE 16*1024*1024	// 16MiB
+#define RSS_INCREASE_SIZE 3*1024*1024	// 3MiB
+#define PRIVATE_CLEAN_DATA_SIZE 256		// 256 bytes
 #define REDUCE_PSS_TIME 1
 
 char info[DATA_SIZE]; 			// This array is 16MiB 
