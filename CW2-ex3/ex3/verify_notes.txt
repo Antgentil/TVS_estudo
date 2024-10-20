@@ -1,0 +1,22 @@
+a)
+
+top -p <PID>
+
+cat /proc/<PID>/status | grep VmRSS
+----
+b)
+
+cat /proc/<PID>/smaps | grep -e Private_Clean
+----
+c)
+
+cat /proc/<PID>/smaps | grep -e Pss
+----
+d)
+cat /proc/<PID>/maps | grep my_lib
+
+gcc -fPIC -shared -o my_lib/my_lib.so my_lib/my_lib.c
+----
+e)
+
+cat /proc/<PID>/smaps | grep -e Private_Dirty
