@@ -7,9 +7,9 @@
 #include <string.h>
 #include <dlfcn.h>
 
-#define DATA_SIZE 16*1024*1024	// 16MiB
+#define DATA_SIZE 16*1024*1024		// 16MiB
 #define RSS_INCREASE_SIZE 3*1024*1024	// 3MiB
-#define PRIVATE_CLEAN_DATA_SIZE 256		// 256 bytes
+#define PRIVATE_CLEAN_DATA_SIZE 256	// 256 bytes
 #define REDUCE_PSS_TIME 1
 
 char info[DATA_SIZE]; 			// This array is 16MiB 
@@ -42,10 +42,10 @@ int main() {
 	// b
 	
 	// This loop reads one byte from every page in the data array (256 pages),
-    // creating private clean pages without modifying them.
-    // The pages will be marked as "clean" because no writes are done, only reads.
+    	// creating private clean pages without modifying them.
+    	// The pages will be marked as "clean" because no writes are done, only reads.
     
-    // Private clean pages: These are memory pages that have been mapped from 
+    	// Private clean pages: These are memory pages that have been mapped from 
 	// a file (e.g., the initialized data section) and have been read but not modified.
 	// They are 'clean' because they match the content in the executable and have not been written to.
 	
@@ -61,8 +61,7 @@ int main() {
 	printf("#3 (press ENTER to continue)"); getchar();
 
 	// c
-	
-	// c
+	// 
 	// The fork() creates a new child process by duplicating the calling process.
 	// After fork(), both parent and child processes SHARE memory pages in a copy-on-write manner.
 	// Sleep for REDUCE_PSS_TIME (30 seconds) to observe changes in the PSS of the process.	
@@ -108,14 +107,14 @@ int main() {
 	
 	void (*mark_pages_dirty)() = dlsym(lib, "mark_pages_dirty");
 	if (mark_pages_dirty == NULL) {
-        fprintf(stderr, "Error: %s\n", dlerror());
-        dlclose(lib);
-        return 1;
-    }
+        	fprintf(stderr, "Error: %s\n", dlerror());
+        	dlclose(lib);
+        	return 1;
+    	}
     
 	mark_pages_dirty();
 	
 	printf("END (press ENTER to continue)"); getchar();
-
+	
 	return 0;
 }
